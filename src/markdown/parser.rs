@@ -83,6 +83,32 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_content(&mut self) -> Result<Vec<Node>, Box<dyn std::error::Error>> {
+        let mut nodes = Vec::new();
+        while self.cur == '\u{0}' {
+            nodes.push(self.parse_paragraph()?);
+        }
+        Ok(nodes)
+    }
+
+    fn parse_paragraph(&mut self) -> Result<Node, Box<dyn std::error::Error>> {
+        let mut nodes = Vec::new();
+        let node = match self.cur {
+            '_' => match self.peek {
+                '_' => unimplemented!(),
+                _ => { 
+                    self.read_char();
+                    let text = self.parse_text_until("_")?;
+                    Node::Emphasis(text)
+                },
+            },
+            _ => unimplemented!(),
+        };
+        nodes.push(node);
+
+        Ok(Node::Paragraph(nodes))
+    }
+
+    fn parse_text_until(&mut self, end: &str) -> Result<String, Box<dyn std::error::Error>> {
         unimplemented!()
     }
 }
