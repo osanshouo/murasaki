@@ -1,6 +1,6 @@
 use std::{fmt, str::FromStr};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Date(u16, u8, u8);
 
 impl fmt::Display for Date {
