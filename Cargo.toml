@@ -1,0 +1,8 @@
+[package]
+name = "murasaki"
+version = "0.1.0"
+authors = ["Hiromu Sugiura <h.sugiura0705@outlook.com>"]
+edition = "2018"
+
+[dependencies]
+latex2mathml = "0.1"
