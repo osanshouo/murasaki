@@ -1,21 +1,38 @@
 use std::fmt;
 use latex2mathml::{latex_to_mathml, DisplayStyle};
 
+pub mod codeblock;
+use codeblock::Language;
+
 #[derive(Debug, Clone)]
 pub enum Node {
-    // Text(String),
+    Text(String),
     // Emphasis(String),
     // Strong(String),
     // Hyperlink(String, String),
     // LaTeX(DisplayStyle, String),
     // Paragraph(Vec<Node>),
+    CodeBlock(Language, Option<String>, String),
     Div(Vec<Node>),
+}
+
+impl Node {
+    pub fn parse(text: String) -> Node {
+        if text.len() < 3 {
+            Node::Div(vec![Node::Text(text)])
+        } else if &text[..3] == "```" {
+            let (language, filename, content) = codeblock::parse(text);
+            Node::CodeBlock(language, filename, content)
+        } else {
+            unimplemented!()
+        }
+    }
 }
 
 impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            // Node::Text(text) => write!(f, "{}", text),
+            Node::Text(text) => write!(f, "{}", text),
             // Node::Emphasis(text) => write!(f, "<em>{}</em>", text),
             // Node::Strong(text) => write!(f, "<strong>{}</strong>", text),
             // Node::Hyperlink(text, url) => write!(f, r#"<a href="{}">{}</a>"#, url, text),
@@ -28,9 +45,17 @@ impl fmt::Display for Node {
             //         vec.iter().map(|node| format!("{}", node)).collect::<String>()
             //     )
             // },
+            Node::CodeBlock(_, filename, content) => {
+                let filename = match filename {
+                    Some(filename) => format!(r#"<div class="filename">{}</div>"#, filename),
+                    None => "".to_string(),
+                };
+                write!(f, r#"<div class="code-frame">{}<pre>{}</pre></div>"#, filename, content)
+            },
             Node::Div(vec) => write!(f, r#"<div class=>{}</div>"#, 
                 vec.iter().map(|node| format!("{}", node)).collect::<String>()
             ),
+            _ => unimplemented!(),
         }
     }
 }
