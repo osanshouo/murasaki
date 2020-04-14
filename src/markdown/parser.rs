@@ -16,9 +16,12 @@ impl<'a> Parser<'a> {
 
     pub fn parse(&mut self) -> Result<(String, Option<Date>, Vec<String>, Vec<Node>), Box<dyn std::error::Error>> {
         let (title, date, tags) = self.parse_header()?;
-        let content = self.parse_content()?;
-
-        Ok((title, date, tags, content))
+        let blocks = self.divide_into_blocks()?;
+        let blocks = blocks.into_iter()
+            .map(|block| Node::new(block))
+            .collect();
+        
+        Ok((title, date, tags, blocks))
     }
 
     /// ヘッダー情報をパースする.
@@ -52,8 +55,19 @@ impl<'a> Parser<'a> {
         Ok((title, date, tags))
     }
 
-    fn parse_content(&mut self) -> Result<Vec<Node>, Box<dyn std::error::Error>> {
-        unimplemented!()
+    fn divide_into_blocks(&mut self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let mut document = Vec::new();
+        let mut div = Vec::new();
+        while let Some(line) = self.lines.next() {
+            if line != "" {
+                div.push(line);
+            } else {
+                document.push(div.join("\n"));
+                div = Vec::new();
+            }
+        }
+
+        Ok(document)
     }
 }
 
@@ -80,6 +94,11 @@ fn main() {
     println!("Hello, world!");
 }
 ```
+
+This is an example of list.
+
+- First line.
+- Second line.
 "#;
 
     #[test]
@@ -96,6 +115,7 @@ fn main() {
         assert_eq!(title, "Sample Text 2");
         assert_eq!(date,  Some(Date(2020, 4, 1)));
         assert_eq!(tags,  vec!["Rust".to_owned(), "日本語".to_owned()]);
-        assert_eq!(parser.lines.next(), Some("Hello, world!"));
+        let content = parser.divide_into_blocks().unwrap();
+        println!("{:?}", content);
     }
 }
