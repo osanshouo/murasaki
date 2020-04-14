@@ -2,23 +2,19 @@ use crate::markdown::{date::Date, node::Node};
 
 #[derive(Debug, Clone)]
 pub struct Parser<'a> {
-    input: &'a str,
     lines: std::str::Lines<'a>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(input: &'a str) -> Self {
-        Parser { 
-            input,
-            lines: input.lines(),
-        }
+        Parser { lines: input.lines() }
     }
 
     pub fn parse(&mut self) -> Result<(String, Option<Date>, Vec<String>, Vec<Node>), Box<dyn std::error::Error>> {
         let (title, date, tags) = self.parse_header()?;
         let blocks = self.divide_into_blocks()?;
         let blocks = blocks.into_iter()
-            .map(|block| Node::new(block))
+            .map(|block| Node::parse(block))
             .collect();
         
         Ok((title, date, tags, blocks))
@@ -62,11 +58,14 @@ impl<'a> Parser<'a> {
             if line != "" {
                 div.push(line);
             } else {
-                document.push(div.join("\n"));
+                let block = div.join("\n");
+                if block.len() > 0 { document.push(block); }
                 div = Vec::new();
             }
         }
-
+        let block = div.join("\n");
+        if block.len() > 0 { document.push(block); }
+        
         Ok(document)
     }
 }
@@ -95,6 +94,8 @@ fn main() {
 }
 ```
 
+
+
 This is an example of list.
 
 - First line.
@@ -117,5 +118,6 @@ This is an example of list.
         assert_eq!(tags,  vec!["Rust".to_owned(), "日本語".to_owned()]);
         let content = parser.divide_into_blocks().unwrap();
         println!("{:?}", content);
+        assert_eq!(content.len(), 4)
     }
 }
