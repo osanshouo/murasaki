@@ -6,7 +6,7 @@ use std::{fs, path::{Path, PathBuf}};
 #[derive(Debug, Clone)]
 pub struct Markdown {
     path: PathBuf,
-    date: date::Date,
+    date: Option<date::Date>,
     title: String,
     tags: Vec<String>,
     content: Vec<node::Node>,

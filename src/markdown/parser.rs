@@ -3,30 +3,18 @@ use crate::markdown::{date::Date, node::Node};
 #[derive(Debug, Clone)]
 pub struct Parser<'a> {
     input: &'a str,
-    chars: std::str::Chars<'a>,
-    cur: char,
-    peek: char,
+    lines: std::str::Lines<'a>,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(input: &'a str) -> Self {
-        let mut parser = Parser { 
+        Parser { 
             input,
-            chars: input.chars(), 
-            cur:  '\u{0}',
-            peek: '\u{0}',
-        };
-        parser.read_char();
-        parser.read_char();
-        parser
+            lines: input.lines(),
+        }
     }
 
-    fn read_char(&mut self) {
-        self.cur = self.peek;
-        self.peek = self.chars.next().unwrap_or('\u{0}');
-    }
-
-    pub fn parse(&mut self) -> Result<(String, Date, Vec<String>, Vec<Node>), Box<dyn std::error::Error>> {
+    pub fn parse(&mut self) -> Result<(String, Option<Date>, Vec<String>, Vec<Node>), Box<dyn std::error::Error>> {
         let (title, date, tags) = self.parse_header()?;
         let content = self.parse_content()?;
 
@@ -34,81 +22,37 @@ impl<'a> Parser<'a> {
     }
 
     /// ヘッダー情報をパースする.
-    fn parse_header(&mut self) -> Result<(String, Date, Vec<String>), Box<dyn std::error::Error>> {
-        if self.input.len() < 3 { return Ok(("".to_owned(), Date(1970, 1, 1), vec![])); }
-        if &self.input[..3] == "+++" {
-            self.skip_line();
-            while !(self.cur == '+' && self.peek == '+') { self.skip_line(); }
-            self.skip_line();
-            
-            let mut lines = self.input.lines().skip(1);
+    /// 
+    /// この関数を終了した時点で `self.lines` は "---" までを消費している.
+    fn parse_header(&mut self) -> Result<(String, Option<Date>, Vec<String>), Box<dyn std::error::Error>> {
+        assert_eq!(self.lines.next(), Some("---"));
+        let mut line;
 
-            let title = lines.next().map_or("".to_owned(), |line| {
-                line.trim().chars()
-                    .skip_while(|x| x != &'\"')
-                    .skip(1)
-                    .take_while(|x| x != &'\"')
-                    .collect::<String>()
-            });
-            let date = lines.next().map_or("".to_owned(), |line| {
-                line.trim().chars()
-                    .skip_while(|x| x != &'=')
-                    .skip(1)
-                    .filter(|x| !x.is_ascii_whitespace())
-                    .collect::<String>()
-            }).parse::<Date>().unwrap_or(Date(1970, 1, 1));
-            let tags = {
-                let line = lines.next().unwrap_or("+++").trim();
-                if line.len() < 4 { Vec::new() } else
-                if &line[..4] != "tags" { Vec::new() } else {
-                    line.split(',')
-                        .map(|element| element.chars()
-                            .skip_while(|x| x != &'\"')
-                            .skip(1)
-                            .take_while(|x| x != &'\"')
-                            .collect()
-                        )
-                        .collect()
-                }
-            };
-            Ok((title, date, tags))
-        } else {
-            Ok(("".to_owned(), Date(1970, 1, 1), vec![]))
+        line = self.lines.next().unwrap();
+        assert_eq!(&line[..7], "title: ");
+        let title = line[7..].trim().to_owned();
+        line = self.lines.next().unwrap();
+
+        let date = if &line[..6.min(line.len())] == "date: " { 
+            let date = line[6..].trim().parse().unwrap();
+            line = self.lines.next().unwrap();
+            Some(date)
+        } else { None };
+
+        let tags = if &line[..6.min(line.len())] == "tags: " { 
+            let tags = line[6..].trim().split(' ').map(|tag| tag.to_owned()).collect::<Vec<_>>();
+            line = self.lines.next().unwrap();
+            tags
+        } else { vec![] };
+
+        while &line[..3.min(line.len())] != "---" {
+            line = self.lines.next().unwrap();
         }
-    }
 
-    fn skip_line(&mut self) {
-        while self.cur != '\n' { self.read_char(); }
-        self.read_char();
+        Ok((title, date, tags))
     }
 
     fn parse_content(&mut self) -> Result<Vec<Node>, Box<dyn std::error::Error>> {
-        let mut nodes = Vec::new();
-        while self.cur == '\u{0}' {
-            nodes.push(self.parse_paragraph()?);
-        }
-        Ok(nodes)
-    }
-
-    fn parse_paragraph(&mut self) -> Result<Node, Box<dyn std::error::Error>> {
-        let mut nodes = Vec::new();
-        let node = match self.cur {
-            '_' => match self.peek {
-                '_' => unimplemented!(),
-                _ => { 
-                    self.read_char();
-                    let text = self.parse_text_until("_")?;
-                    Node::Emphasis(text)
-                },
-            },
-            _ => unimplemented!(),
-        };
-        nodes.push(node);
-
-        Ok(Node::Paragraph(nodes))
-    }
-
-    fn parse_text_until(&mut self, end: &str) -> Result<String, Box<dyn std::error::Error>> {
         unimplemented!()
     }
 }
@@ -118,33 +62,40 @@ impl<'a> Parser<'a> {
 mod tests {
     use super::*;
 
-    const INPUT1: &str = r#"+++
-title = "Sample Text"
-date = 2020-04-01
-+++
+    const INPUT1: &str = r#"---
+title: Sample Text
+---
 Hello, world!"#;
 
-    const INPUT2: &str = r#"+++
-title = "Sample Text 2"
-date = 2020-04-01
-tags = ["Rust", "日本語"]
-+++
-Hello, world!"#;
+    const INPUT2: &str = r#"---
+title: Sample Text 2
+date: 2020-04-01
+tags: Rust 日本語
+dummy: field
+---
+Hello, world!
+
+```rust:src/main.rs
+fn main() {
+    println!("Hello, world!");
+}
+```
+"#;
 
     #[test]
     fn header() {
         let mut parser = Parser::new(INPUT1);
         let (title, date, tags) = parser.parse_header().unwrap();
         assert_eq!(title, "Sample Text");
-        assert_eq!(date,  Date(2020, 4, 1));
+        assert_eq!(date,  None);
         assert_eq!(tags,  Vec::<String>::new());
-        assert_eq!(parser.cur, 'H');
+        assert_eq!(parser.lines.next(), Some("Hello, world!"));
 
         let mut parser = Parser::new(INPUT2);
         let (title, date, tags) = parser.parse_header().unwrap();
         assert_eq!(title, "Sample Text 2");
-        assert_eq!(date,  Date(2020, 4, 1));
+        assert_eq!(date,  Some(Date(2020, 4, 1)));
         assert_eq!(tags,  vec!["Rust".to_owned(), "日本語".to_owned()]);
-        assert_eq!(parser.cur, 'H');
+        assert_eq!(parser.lines.next(), Some("Hello, world!"));
     }
 }
