@@ -9,8 +9,27 @@ use syntect::{
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Language {
+    C,
+    Css,
+    Html,
+    Javascript,
+    Python,
     Rust,
     None,
+}
+impl Language {
+    fn extension(&self) -> &'static str {
+        match self {
+            Language::C => "c",
+            Language::Css => "css",
+            Language::Html => "html",
+            Language::Javascript => "js",
+            Language::Python => "py",
+            Language::Rust => "rs",
+            Language::None => "",
+            
+        }
+    }
 }
 
 pub fn parse(text: String) -> (Language, Option<String>, String) {
@@ -18,6 +37,11 @@ pub fn parse(text: String) -> (Language, Option<String>, String) {
 
     let mut line = lines.next().unwrap()[3..].split(':');
     let lang = match line.next() {
+        Some("c") => Language::C,
+        Some("css") => Language::Css,
+        Some("html") => Language::Html,
+        Some("javascript") => Language::Javascript,
+        Some("python") => Language::Python,
         Some("rust") => Language::Rust,
         _ => Language::None,
     };
@@ -35,11 +59,11 @@ pub fn parse(text: String) -> (Language, Option<String>, String) {
     let ts = ThemeSet::load_defaults();
 
     let content = match lang {
-        Language::Rust => {
-            let syntax = ps.find_syntax_by_extension("rs").unwrap();
+        Language::None => content,
+        lang => {
+            let syntax = ps.find_syntax_by_extension(lang.extension()).unwrap();
             highlighted_html_for_string(&content, &ps, syntax, &ts.themes["base16-mocha.dark"])
         },
-        _ => content,
     };
 
     (lang, filename, content)
@@ -64,11 +88,8 @@ fn main() {
     println!("Hello, world!");
 }
 ```"#.to_owned();
-        let (lang, filename, content) = parse(text);
+        let (lang, filename, _content) = parse(text);
         assert_eq!(lang, Language::Rust);
         assert_eq!(filename, Some("src/main.rs".to_owned()));
-        assert_eq!(&content, r#"fn main() {
-    println!("Hello, world!");
-}"#);
     }
 }
