@@ -2,9 +2,9 @@
 # It is not intended for manual editing.
 [[package]]
 name = "latex2mathml"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48f0fff1626a3ac864a417b501fbd78bc71cd6dfebde6467ef05903043476fec"
+checksum = "87a5a758ae654db50e12821f35a7592e3f5a3d27e3ff8dd9f53f9ffc1b96923e"
 
 [[package]]
 name = "murasaki"

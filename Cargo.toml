@@ -5,4 +5,4 @@ authors = ["Hiromu Sugiura <h.sugiura0705@outlook.com>"]
 edition = "2018"
 
 [dependencies]
-latex2mathml = "0.1"
+latex2mathml = "0.2"
