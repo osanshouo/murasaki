@@ -1,16 +1,17 @@
 use std::fmt;
 use latex2mathml::{latex_to_mathml, DisplayStyle};
 
+pub mod inline;
 pub mod codeblock;
 use codeblock::Language;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     Text(String),
-    // Emphasis(String),
-    // Strong(String),
+    Emphasis(String),
+    Strong(String),
     // Hyperlink(String, String),
-    // LaTeX(DisplayStyle, String),
+    LaTeX(DisplayStyle, String),
     // Paragraph(Vec<Node>),
     CodeBlock(Language, Option<String>, String),
     Div(Vec<Node>),
@@ -24,7 +25,7 @@ impl Node {
             let (language, filename, content) = codeblock::parse(text);
             Node::CodeBlock(language, filename, content)
         } else {
-            unimplemented!()
+            Node::Div(inline::parse(&text))
         }
     }
 }
@@ -33,13 +34,13 @@ impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Node::Text(text) => write!(f, "{}", text),
-            // Node::Emphasis(text) => write!(f, "<em>{}</em>", text),
-            // Node::Strong(text) => write!(f, "<strong>{}</strong>", text),
+            Node::Emphasis(text) => write!(f, "<em>{}</em>", text),
+            Node::Strong(text) => write!(f, "<strong>{}</strong>", text),
             // Node::Hyperlink(text, url) => write!(f, r#"<a href="{}">{}</a>"#, url, text),
-            // Node::LaTeX(style, text) => match latex_to_mathml(text, style.clone()) {
-            //     Ok(mathml) => write!(f, "{}", mathml),
-            //     Err(_)     => write!(f, "${}$", text),
-            // },
+            Node::LaTeX(style, text) => match latex_to_mathml(text, style.clone()) {
+                Ok(mathml) => write!(f, "{}", mathml),
+                Err(_)     => write!(f, "${}$", text),
+            },
             // Node::Paragraph(vec) => {
             //     write!(f, r#"<div class="paragraph">{}</div>"#,
             //         vec.iter().map(|node| format!("{}", node)).collect::<String>()
@@ -55,7 +56,7 @@ impl fmt::Display for Node {
             Node::Div(vec) => write!(f, r#"<div class=>{}</div>"#, 
                 vec.iter().map(|node| format!("{}", node)).collect::<String>()
             ),
-            _ => unimplemented!(),
+            // _ => unimplemented!(),
         }
     }
 }
