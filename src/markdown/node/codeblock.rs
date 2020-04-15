@@ -1,3 +1,12 @@
+use syntect::{
+    parsing::SyntaxSet,
+    highlighting::{ThemeSet},
+    html::{
+        highlighted_html_for_string,
+    },
+};
+
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Language {
     Rust,
@@ -20,8 +29,20 @@ pub fn parse(text: String) -> (Language, Option<String>, String) {
             content.push(line);
         }
     }
+    let content = content.join("\n");
+    
+    let ps = SyntaxSet::load_defaults_newlines();
+    let ts = ThemeSet::load_defaults();
 
-    (lang, filename, content.join("\n"))
+    let content = match lang {
+        Language::Rust => {
+            let syntax = ps.find_syntax_by_extension("rs").unwrap();
+            highlighted_html_for_string(&content, &ps, syntax, &ts.themes["base16-mocha.dark"])
+        },
+        _ => content,
+    };
+
+    (lang, filename, content)
 }
 
 #[cfg(test)]
