@@ -56,9 +56,6 @@ pub fn parse(text: &str) -> Vec<Node> {
     let mut div = Vec::new();
     let mut parser = InlineParser::new(text);
 
-    let inline = parser.read_text();
-    div.push(Node::Text(inline));
-
     loop {
         match parser.cur {
             '\u{0}' => break,
@@ -115,6 +112,7 @@ mod tests {
                 Node::Emphasis("italic".to_owned()),
                 Node::Text(" word.".to_owned()),
             ]),
+            ("$x_i$", vec![Node::LaTeX(DisplayStyle::Inline, "x_i".to_owned())]),
         ];
 
         for (problem, answer) in problems.iter() {
