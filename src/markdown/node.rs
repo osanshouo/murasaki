@@ -63,7 +63,7 @@ impl fmt::Display for Node {
                 };
                 write!(f, r#"<div class="code-frame">{}<pre>{}</pre></div>"#, filename, content)
             },
-            Node::Div(vec) => write!(f, r#"<div class=>{}</div>"#, 
+            Node::Div(vec) => write!(f, r#"<div class="paragraph">{}</div>"#, 
                 vec.iter().map(|node| format!("{}", node)).collect::<String>()
             ),
             // _ => unimplemented!(),
