@@ -43,6 +43,12 @@ impl Markdown {
         }
     }
 
+    fn content_to_html(&self) -> String {
+      self.content.iter()
+        .map(|node| format!("{}\n", node))
+        .collect()
+    }
+
     pub fn to_html(&self, config: &crate::config::Config) -> String {
         CONTENT_TEMPLATE
             .replace("{{SITE NAME}}", &config.site_name)
@@ -52,7 +58,7 @@ impl Markdown {
             .replace("{{YEAR}}", &config.year)
             .replace("{{TAGS}}", &self.tags_to_html())
             .replace("{{DATE}}", &self.date_to_html())
-            .replace("{{CONTENT}}", "")
+            .replace("{{CONTENT}}", &self.content_to_html())
             .replace("{{ROOT}}", &config.root)
     }
 }
@@ -81,7 +87,7 @@ const CONTENT_TEMPLATE: &str = r#"<!DOCTYPE html>
     </div>
   </header>
 
-  CONTENT
+  {{CONTENT}}
 </section>
   </main>
 
