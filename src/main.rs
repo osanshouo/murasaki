@@ -26,6 +26,7 @@ fn convert_md_to_html<P: AsRef<Path>>(path: P, config: &Config) -> Result<(), Bo
                 eprintln!("{:?}", path.as_ref());
                 let target = target_file_name(&path);
                 let markdown = Markdown::from(path).unwrap();
+                fs::create_dir_all(target.parent().unwrap())?;
                 fs::write(target, &markdown.to_html(config))?;
             }
         }
