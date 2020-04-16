@@ -7,3 +7,6 @@ edition = "2018"
 [dependencies]
 latex2mathml = "0.2"
 syntect = { version = "4.1", default-features = false, features = ["default-fancy"]}
+serde = "1.0"
+serde_derive = "1.0"
+toml = "0.5"
