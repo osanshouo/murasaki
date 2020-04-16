@@ -31,7 +31,7 @@ impl Markdown {
             .map(|tag| {
                 let mut slug = tag.clone();
                 slug.make_ascii_lowercase();
-                format!(r#"<div class="tag"><a href="{{ROOT}}/tags/{}">{}</a></div>"#, slug, tag)
+                format!(r#"<div class="tag"><a href="{{{{ROOT}}}}/tags/{}">{}</a></div>"#, slug, tag)
             })
             .collect()
     }
@@ -47,9 +47,9 @@ impl Markdown {
         CONTENT_TEMPLATE
             .replace("{{SITE NAME}}", &config.site_name)
             .replace("{{LANG}}", &config.language)
-            .replace("{{TITLE}", &self.title)
-            .replace("{{AUTHOR}", &config.author)
-            .replace("{{YEAR}", &config.year)
+            .replace("{{TITLE}}", &self.title)
+            .replace("{{AUTHOR}}", &config.author)
+            .replace("{{YEAR}}", &config.year)
             .replace("{{TAGS}}", &self.tags_to_html())
             .replace("{{DATE}}", &self.date_to_html())
             .replace("{{CONTENT}}", "")
@@ -62,7 +62,7 @@ const CONTENT_TEMPLATE: &str = r#"<!DOCTYPE html>
 
 <head>
   <meta charset="utf-8">
-  <title>{{TITLE}} - {{SITE NAME}</title>
+  <title>{{TITLE}} - {{SITE NAME}}</title>
   <link rel="stylesheet" href="/article-page.css">
 </head>
 
