@@ -2,6 +2,7 @@ use std::fmt;
 use latex2mathml::{latex_to_mathml, DisplayStyle};
 
 pub mod inline;
+pub mod header;
 pub mod codeblock;
 use codeblock::Language;
 
@@ -13,6 +14,7 @@ pub enum Node {
     // Hyperlink(String, String),
     LaTeX(DisplayStyle, String),
     // Paragraph(Vec<Node>),
+    Header(u8, String),
     CodeBlock(Language, Option<String>, String),
     Div(Vec<Node>),
 }
@@ -21,7 +23,7 @@ impl Node {
     /// ブロックの種類に応じて処理を分岐する.
     /// - テキスト
     /// - コードブロック
-    /// - ヘッダー (未実装)
+    /// - ヘッダー
     /// - リスト (未実装)
     pub fn parse(text: String) -> Node {
         if text.len() < 3 {
@@ -29,6 +31,8 @@ impl Node {
         } else if &text.as_bytes()[..3] == b"```" {
             let (language, filename, content) = codeblock::parse(text);
             Node::CodeBlock(language, filename, content)
+        } else if &text.as_bytes()[0] == &b'#' {
+            header::parse(text)
         } else {
             Node::Div(inline::parse(&text))
         }
@@ -51,6 +55,7 @@ impl fmt::Display for Node {
             //         vec.iter().map(|node| format!("{}", node)).collect::<String>()
             //     )
             // },
+            Node::Header(level, text) => write!(f, "<h{0}>{1}</h{0}>", level, text),
             Node::CodeBlock(_, filename, content) => {
                 let filename = match filename {
                     Some(filename) => format!(r#"<div class="filename">{}</div>"#, filename),
