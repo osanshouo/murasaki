@@ -18,10 +18,15 @@ pub enum Node {
 }
 
 impl Node {
+    /// ブロックの種類に応じて処理を分岐する.
+    /// - テキスト
+    /// - コードブロック
+    /// - ヘッダー (未実装)
+    /// - リスト (未実装)
     pub fn parse(text: String) -> Node {
         if text.len() < 3 {
             Node::Div(vec![Node::Text(text)])
-        } else if &text[..3] == "```" {
+        } else if &text.as_bytes()[..3] == b"```" {
             let (language, filename, content) = codeblock::parse(text);
             Node::CodeBlock(language, filename, content)
         } else {
